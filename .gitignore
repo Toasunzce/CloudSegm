@@ -1,0 +1,7 @@
+# weights/
+data/
+data.zip
+__pycache__
+.env
+out_data
+.gitignore
