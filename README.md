@@ -34,8 +34,13 @@ Cloud-free images are reconstructed from N scenes via progressive pixel replacem
 ```
 thick cloud  →  thin cloud  →  shadow  →  clear
 ```
+For example, lets take a look on the next set of pictures, used to remove clouds from several dates to combine them into a single composition.
+| 05-05-2024 | 05-20-2024 | 06-14-2024 | 06-16-2024 | 06-19-2024 | 
+|---|---|---|---|---|
+|![05-05](assets/uk/scenes/2024-05-05_rgb.png)|![05-20](assets/uk/scenes/2024-05-20_rgb.png)|![06-14](assets/uk/scenes/2024-06-14_rgb.png)|![06-16](assets/uk/scenes/2024-06-16_rgb.png)|![06-19](assets/uk/scenes/2024-06-19_rgb.png)|
+|![05-05](assets/uk/masks/2024-05-05_mask.png)|![05-20](assets/uk/masks/2024-05-20_mask.png)|![06-14](assets/uk/masks/2024-06-14_mask.png)|![06-16](assets/uk/masks/2024-06-16_mask.png)|![06-19](assets/uk/masks/2024-06-19_mask.png)|
 
-Each pixel is sourced from the least-cloudy available scene at that location.
+After a model prediction, we can get a mask where each pixel is sourced from the least-cloudy available scene at that location.
 
 ![assets/composite.png](assets/composite.png)
 
