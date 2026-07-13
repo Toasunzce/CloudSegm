@@ -2,31 +2,38 @@
 Submodule for data visualization.
 Usage example:
 
-# single scene 
+single scene 
 >>> show_images(imgs[0], dates="2024-07-01")
 >>> show_masks(preds[0], dates="2024-07-01")
 
-# batch
+batch
 >>> show_images(imgs, dates=dates)
 >>> show_masks(preds, dates=dates)
 
-# axes inserting (single image only)
+axes insertion (single image only)
 >>> fig, ax = plt.subplots(1, 2)
     show_images(imgs[0], ax=ax[0])
     show_masks(preds[0], ax=ax[1])
     plt.show()
 
-# general analysis
+general analysis
 >>> preds, probs = get_predictions(model, imgs, device)
 >>> composite_img, source_map, mask_map = composite(imgs, model, device)
 
 >>> show_predictions(imgs, preds)
 >>> show_confidence(imgs, probs)
 >>> show_composite_source(composite_img, source_map, mask_map, imgs:
+
+image saving
+>>> preds, probs = get_predictions(model, imgs, device)
+
+>>> save_images(imgs, dates=dates, out_dir="assets/scenes")
+>>> save_masks(preds, dates=dates, out_dir="assets/masks")
+>>> save_predictions(imgs, preds, dates=dates, out_dir="assets/predictions")
 """
 
 
-
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -215,7 +222,6 @@ def show_confidence(imgs, probs, dates=None):
     ax[0, 0].set_ylabel("RGB", fontsize=10)
     ax[1, 0].set_ylabel("Confidence", fontsize=10)
 
-    fig.colorbar(im, ax=ax[1, :], shrink=0.6, label="max probability")  # ty:ignore[invalid-argument-type]
     fig.suptitle("Prediction Confidence", fontsize=12, y=1.01)
     fig.tight_layout()
     plt.show()
@@ -282,3 +288,90 @@ def show_composite_source(composite_img , source_map, mask_map, imgs, dates=None
     fig.suptitle("Progressive Composite Result", fontsize=13, y=1.01)
     fig.tight_layout()
     plt.show()
+
+
+def save_images(imgs, dates=None, out_dir=".", prefix="scene", dpi=150):
+    """
+    Save each RGB scene as a separate file.
+
+    imgs:    (N, 7, H, W)
+    dates:   list[str] | None
+    out_dir: output directory
+    prefix:  filename prefix
+    dpi:     image resolution
+    """
+    os.makedirs(out_dir, exist_ok=True)
+    for i in range(imgs.shape[0]):
+        name = dates[i] if dates else f"{prefix}_{i+1}"
+        fig, ax = plt.subplots(figsize=(5, 5), dpi=dpi)
+        ax.imshow(scene_to_rgb(imgs[i]))
+        ax.axis("off")
+        fig.tight_layout(pad=0)
+        path = os.path.join(out_dir, f"{name}_rgb.png")
+        fig.savefig(path, bbox_inches="tight", pad_inches=0)
+        plt.close(fig)
+        print(f"Saved: {path}")
+
+
+def save_masks(masks, dates=None, out_dir=".", prefix="scene", dpi=150):
+    """
+    Save each segmentation mask as a separate file.
+
+    masks:   (N, H, W)
+    dates:   list[str] | None
+    out_dir: output directory
+    prefix:  filename prefix
+    dpi:     image resolution
+    """
+    os.makedirs(out_dir, exist_ok=True)
+    for i in range(masks.shape[0]):
+        name = dates[i] if dates else f"{prefix}_{i+1}"
+        fig, ax = plt.subplots(figsize=(5, 5), dpi=dpi)
+        ax.imshow(masks[i], cmap=MASK_CMAP, vmin=0, vmax=3)
+        ax.axis("off")
+        fig.tight_layout(pad=0)
+        path = os.path.join(out_dir, f"{name}_mask.png")
+        fig.savefig(path, bbox_inches="tight", pad_inches=0)
+        plt.close(fig)
+        print(f"Saved: {path}")
+
+
+def save_predictions(imgs, preds, dates=None, out_dir=".", dpi=150):
+    """
+    Save RGB and mask side by side for each scene as a separate file.
+
+    imgs:    (N, 7, H, W)
+    preds:   (N, H, W)
+    dates:   list[str] | None
+    out_dir: output directory
+    dpi:     image resolution
+    """
+    os.makedirs(out_dir, exist_ok=True)
+    for i in range(imgs.shape[0]):
+        name = dates[i] if dates else f"scene_{i+1}"
+
+        fig, ax = plt.subplots(1, 2, figsize=(8, 4), dpi=dpi)
+        ax[0].imshow(scene_to_rgb(imgs[i]))
+        ax[0].set_title("RGB", fontsize=9)
+        ax[0].axis("off")
+
+        ax[1].imshow(preds[i], cmap=MASK_CMAP, vmin=0, vmax=3)
+        ax[1].set_title("Mask", fontsize=9)
+        ax[1].axis("off")
+
+        total  = preds[i].numel()
+        stats  = " | ".join(
+            f"{CLASS_NAMES[c]}: {(preds[i] == c).sum().item() / total * 100:.1f}%"
+            for c in range(4)
+        )
+        fig.suptitle(f"{name}\n{stats}", fontsize=7, y=0.02)
+
+        patches = [mpatches.Patch(color=MASK_CMAP(c / 3), label=CLASS_NAMES[c]) for c in range(4)]
+        fig.legend(handles=patches, loc="lower center", ncol=4,
+                   bbox_to_anchor=(0.5, -0.08), fontsize=7)
+
+        fig.tight_layout()
+        path = os.path.join(out_dir, f"{name}_pred.png")
+        fig.savefig(path, bbox_inches="tight")
+        plt.close(fig)
+        print(f"Saved: {path}")
