@@ -1,3 +1,12 @@
+"""
+Dataset classes for cloud segmentation pipeline.
+
+CloudDataset - Cloudsen12 patches for model training and validation.
+CustomSceneDataset - Sentinel-2 scense fetched via src.fetching.fetch_and_save_patches() for inference.
+"""
+
+
+
 import os
 import pandas as pd
 import numpy as np
@@ -11,8 +20,26 @@ from torchvision import tv_tensors
 
 class CloudDataset(Dataset):
     """
-    Cloudsen12 dataset wrapper.
-    Used to manage saved sentinel-2 satelline 
+    CloudSen12 dataset wrapper for model training and validation.
+
+    Expects a directory with the following structure:
+        data_dir/
+            metadata.csv
+            train/
+                000001_img.tif
+                000001_label.tif
+                ...
+            val/
+            test/
+
+    Images are 7-band Sentinel-2 L1C patches (B02 B03 B04 B08 B10 B11 B12),
+    stored as uint16 GeoTIFF and normalized to [0, 1].
+
+    Masks contain 4 classes:
+        0 - clear
+        1 - thick cloud
+        2 - thin cloud
+        3 - cloud shadow
     """
     def __init__(self, data_dir, split):
         meta = pd.read_csv(os.path.join(data_dir, "metadata.csv"))
@@ -49,7 +76,17 @@ class CloudDataset(Dataset):
 
 class CustomSceneDataset(Dataset):
     """
+    Dataset for Sentinel-2 scenes fetched via CDSE API (see fetching.py).
+
+    Expects a directory produced by fetch_and_save_patches():
+        location_dir/
+            metadata.csv
+            minsk_20240701_img.tif
+            minsk_20240706_img.tif
+            ...
     
+    Unlike CloudDataset, this class has no augmentations and returns
+    scene metadata (s2_id, date)
     """
     def __init__(self, location_dir):
         self.location_dir = location_dir
@@ -70,12 +107,13 @@ class CustomSceneDataset(Dataset):
     
     def getscenes(self):
         """
-        returns batch of scenes in [B, 7, 512, 512]
+        Load all scenes into a batch.
+        Returns: (N, 7, 512, 512) float32
         """
         return torch.stack([self[i][0] for i in range(len(self))])
     
     def getdates(self):
         """
-        returns list of scene dates
+        Return acquisition dates for all scenes.
         """
         return [self[i][2] for i in range(len(self))]

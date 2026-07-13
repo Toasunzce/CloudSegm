@@ -1,7 +1,8 @@
 """
 Script for cloudsen12 dataset extraction
 Usage:
->>> python3 download.py
+
+>>> python3 src.download.py /path/to/output
 """
 
 
