@@ -7,7 +7,7 @@
 
 End-to-end pipeline for cloud detection and removal from Sentinel-2 L1C imagery. The model segments clouds across multiple acquisitions of the same location and composites a cloud-free result.
 
-![placeholder - segmentation results: 3 scenes, RGB row + mask row](assets/predictions.png)
+![composite progression](assets/composite.gif)
 
 ---
 
